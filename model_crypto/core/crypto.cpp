@@ -1,12 +1,12 @@
-﻿#include "encryption.h"
+﻿#include "crypto.h"
 
 
 // Function to calculate SHA256 hash of a key
-std::string TRTCrypto::CalculateSHA256(const CryptoPP::SecByteBlock &key) {
+std::string Crypto::CalculateSHA256(const CryptoPP::SecByteBlock& key) {
     CryptoPP::SHA256 hash;
     std::string hashResult;
 
-    CryptoPP::StringSource calculate(key.data(), key.size(), true,
+    CryptoPP::StringSource calculate(key, key.size(), true,
         new CryptoPP::HashFilter(hash,
             new CryptoPP::HexEncoder(
                 new CryptoPP::StringSink(hashResult)
@@ -17,79 +17,78 @@ std::string TRTCrypto::CalculateSHA256(const CryptoPP::SecByteBlock &key) {
     return hashResult;
 }
 
-std::string TRTCrypto::Convert2String(const size_t &value, const size_t &length) {
-    // Convert size_t to string
-    std::stringstream ss;
-    ss << value;
-    std::string result = ss.str();
 
-    // Left-pad the string with spaces to ensure the length is 3 characters
+std::string Crypto::ConvertToString(const size_t& value, const size_t& length) {
+    // Convert size_t to string and pad with spaces if needed
+    std::string result = std::to_string(value);
     if (result.length() < length) {
         result = std::string(length - result.length(), ' ') + result;
     }
-
     return result;
 }
 
 
 // Function to verify if the key matches the stored hash
-bool TRTCrypto::VerifyKey(const CryptoPP::SecByteBlock &key, const std::string &storedKeyHash) {
+bool Crypto::VerifyKey(const CryptoPP::SecByteBlock& key, const std::string& storedKeyHash) {
     std::string calculatedKeyHash = CalculateSHA256(key);
     return calculatedKeyHash == storedKeyHash;
 }
 
 
 // Encrypt function with header information
-std::string TRTCrypto::EncryptWithHeader(const std::string &data, const CryptoPP::SecByteBlock &key, const CryptoPP::SecByteBlock &iv, const std::string &magicNumber, const std::string &version) {
-    // Header format: [magic_number_len | magic_number | version_len | version | key_hash_length | key_hash | encrypted_data]
-
+std::string Crypto::EncryptWithHeader(const std::string &data, const std::string &keyStr, const std::string &ivStr, const std::string &magicNumber, const std::string &version) {
     std::string cipher;
 
     try {
+        CryptoPP::SecByteBlock key(reinterpret_cast<const CryptoPP::byte *>(keyStr.data()), keyStr.size());
+        CryptoPP::SecByteBlock iv(reinterpret_cast<const CryptoPP::byte *>(ivStr.data()), ivStr.size());
         CryptoPP::GCM<CryptoPP::AES>::Encryption e;
         e.SetKeyWithIV(key, key.size(), iv, iv.size());
 
-        // Calculate SHA256 hash of the key
         std::string keyHash = CalculateSHA256(key);
 
-        // Get the length
         const size_t magicNumberLength = magicNumber.length();
         const size_t versionLength = version.length();
         const size_t keyHashLength = keyHash.length();
 
         // Construct the header
-        std::string header = Convert2String(magicNumberLength, MAGIC_NUMBER_LEN) + \
-            magicNumber + Convert2String(versionLength, VERSION_NUMBER_LEN) + version + \
-            Convert2String(keyHashLength, KEY_HASH_LENGTH_LEN) + keyHash;
+        std::string header;
+        header.reserve(MAGIC_NUMBER_LEN + VERSION_NUMBER_LEN + KEY_HASH_LENGTH_LEN);
+        header += ConvertToString(magicNumberLength, MAGIC_NUMBER_LEN);
+        header += magicNumber;
+        header += ConvertToString(versionLength, VERSION_NUMBER_LEN);
+        header += version;
+        header += ConvertToString(keyHashLength, KEY_HASH_LENGTH_LEN);
+        header += keyHash;
 
         // Encrypt the data
-        CryptoPP::StringSource s(data, true, 
+        CryptoPP::StringSource s(data, true,
             new CryptoPP::AuthenticatedEncryptionFilter(e,
                 new CryptoPP::StringSink(cipher)
-            ) // StreamTransformationFilter
-        ); // StringSource
+            )
+        );
 
         // Prepend the header to the cipher
         cipher = header + cipher;
     } catch(const CryptoPP::Exception& e) {
-        std::cerr << e.what() << std::endl;
-        exit(1);
+        // Handle the exception gracefully, e.g., log an error message
+        std::cerr << "Encryption error: " << e.what() << std::endl;
     }
 
     return cipher;
 }
 
-// Decrypt function for header-aware encrypted data
-std::string TRTCrypto::DecryptWithHeader(const std::string &cipher, const CryptoPP::SecByteBlock &key, const CryptoPP::SecByteBlock &iv) {
-    // Header format: [magic_number_len | magic_number | version_len | version | key_hash_length | key_hash | encrypted_data]
 
+// Decrypt function for header-aware encrypted data
+std::string Crypto::DecryptWithHeader(const std::string &cipher, const std::string &keyStr, const std::string &ivStr) {
     std::string recovered;
 
     try {
+        CryptoPP::SecByteBlock key(reinterpret_cast<const CryptoPP::byte *>(keyStr.data()), keyStr.size());
+        CryptoPP::SecByteBlock iv(reinterpret_cast<const CryptoPP::byte *>(ivStr.data()), ivStr.size());
         CryptoPP::GCM<CryptoPP::AES>::Decryption d;
         d.SetKeyWithIV(key, key.size(), iv, iv.size());
 
-        // Extract header information
         std::string magicNumberLengthStr = cipher.substr(0, MAGIC_NUMBER_LEN);
         size_t magicNumberLength = std::stoull(magicNumberLengthStr);
         std::string magicNumber = cipher.substr(MAGIC_NUMBER_LEN, magicNumberLength);
@@ -104,44 +103,28 @@ std::string TRTCrypto::DecryptWithHeader(const std::string &cipher, const Crypto
 
         std::string encryptedData = cipher.substr(MAGIC_NUMBER_LEN + magicNumberLength + VERSION_NUMBER_LEN + versionLength + KEY_HASH_LENGTH_LEN + keyHashLength);
 
-        // Verify the key using stored hash
         if (!VerifyKey(key, keyHash)) {
             std::cerr << "Key verification failed." << std::endl;
-            exit(1);
+            return "";
         }
 
-        // Decrypt the data
-        // The StreamTransformationFilter removes
-        //  padding as required.
-        CryptoPP::StringSource(encryptedData, true, 
+        CryptoPP::StringSource(encryptedData, true,
             new CryptoPP::AuthenticatedDecryptionFilter(d,
                 new CryptoPP::StringSink(recovered)
-            ) // StreamTransformationFilter
-        ); // StringSource
+            )
+        );
     } catch(const CryptoPP::Exception& e) {
-        std::cerr << e.what() << std::endl;
-        exit(1);
+        // Handle the exception gracefully, e.g., log an error message
+        std::cerr << "Decryption error: " << e.what() << std::endl;
     }
 
     return recovered;
 }
 
-std::vector<unsigned char> TRTCrypto::Convert2TRTengine(const std::string& data) {
-    unsigned char* engine_data[1];
-    engine_data[0] = new unsigned char[data.length() + 1];
-    std::copy(data.begin(), data.end(), engine_data[0]);
-    engine_data[0][data.length()] = '\0';
 
-    // Convert char* array to vector<char>
-    std::vector<unsigned char> engine(engine_data[0], engine_data[0] + data.length());
-    // Clean up the memory
-    delete* engine_data;
-    return engine;
-}
-
-std::string TRTCrypto::GenerateAESKey(const std::string& macAddress) {
+std::string Crypto::GenerateAESKey(const std::string& content) {
     CryptoPP::byte hash[CryptoPP::SHA256::DIGESTSIZE];
-    CryptoPP::SHA256().CalculateDigest(hash, reinterpret_cast<const CryptoPP::byte*>(macAddress.c_str()), macAddress.length());
+    CryptoPP::SHA256().CalculateDigest(hash, reinterpret_cast<const CryptoPP::byte*>(content.c_str()), content.length());
 
     CryptoPP::HexEncoder encoder;
     std::string encodedHash;
@@ -152,7 +135,8 @@ std::string TRTCrypto::GenerateAESKey(const std::string& macAddress) {
     return encodedHash.substr(0, 32); // AES-256 key length is 32 bytes
 }
 
-std::string TRTCrypto::GenerateRandomIV() {
+
+std::string Crypto::GenerateRandomIV() {
     CryptoPP::byte iv[CryptoPP::AES::BLOCKSIZE];
     CryptoPP::AutoSeededRandomPool prng;
     prng.GenerateBlock(iv, sizeof(iv));
@@ -164,8 +148,4 @@ std::string TRTCrypto::GenerateRandomIV() {
     encoder.MessageEnd();
 
     return encodedIV;
-}
-
-CryptoPP::SecByteBlock TRTCrypto::StringToSecByteBlock(const std::string &str) {
-    return CryptoPP::SecByteBlock(reinterpret_cast<const CryptoPP::byte *>(str.data()), str.size());
 }
