@@ -18,6 +18,22 @@ target("utils")
     add_includedirs("model_crypto/utils", {interface = true})
 
 
+target("model_crypto")
+    add_deps("core")
+    set_kind("shared")
+    set_extension(".pyd")
+    add_packages("cryptopp", "pybind11")
+    add_files("model_crypto/pybind/model_crypto.cpp")
+
+    after_build(function (target)
+            os.cp(
+                "$(scriptdir)/build/**.pyd", 
+                "$(scriptdir)/python/model_crypto/libs"
+            )
+        end
+    )
+
+
 target("Crypto")
     set_kind("binary")
     add_packages("cryptopp")
