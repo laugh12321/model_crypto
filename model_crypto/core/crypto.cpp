@@ -36,7 +36,7 @@ bool Crypto::VerifyKey(const CryptoPP::SecByteBlock& key, const std::string& sto
 
 
 // Encrypt function with header information
-std::string Crypto::EncryptWithHeader(const std::string &data, const std::string &keyStr, const std::string &ivStr, const std::string &magicNumber, const std::string &version) {
+std::string Crypto::EncryptWithHeader(const std::string& data, const std::string& keyStr, const std::string& ivStr, const std::string& magicNumber, const std::string& version) {
     std::string cipher;
 
     try {
@@ -80,7 +80,7 @@ std::string Crypto::EncryptWithHeader(const std::string &data, const std::string
 
 
 // Decrypt function for header-aware encrypted data
-std::string Crypto::DecryptWithHeader(const std::string &cipher, const std::string &keyStr, const std::string &ivStr) {
+std::string Crypto::DecryptWithHeader(const std::string& cipher, const std::string& keyStr, const std::string& ivStr) {
     std::string recovered;
 
     try {
