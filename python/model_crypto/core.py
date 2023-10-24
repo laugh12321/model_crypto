@@ -1,4 +1,5 @@
-from .libs import model_crypto as C
+from __future__ import annotations
+from .libs import core
 
 
 def encrypt_with_header(data: bytes, key: str, iv: str, magic_number: str = "MODEL", version: str = "VERSION:1.0") -> bytes:
@@ -15,7 +16,7 @@ def encrypt_with_header(data: bytes, key: str, iv: str, magic_number: str = "MOD
     Returns:
         bytes: The encrypted data including the header.
     """
-    return C.EncryptWithHeader(data, key, iv, magic_number, version)
+    return core.EncryptWithHeader(data, key, iv, magic_number, version)
 
 
 def decrypt_with_header(cipher: bytes, key: str, iv: str) -> bytes:
@@ -30,7 +31,7 @@ def decrypt_with_header(cipher: bytes, key: str, iv: str) -> bytes:
     Returns:
         bytes: The decrypted data without the header.
     """
-    return C.DecryptWithHeader(cipher, key, iv)
+    return core.DecryptWithHeader(cipher, key, iv)
 
 
 def generate_aes_key(content: str) -> str:
@@ -43,7 +44,7 @@ def generate_aes_key(content: str) -> str:
     Returns:
         str: The generated AES key.
     """
-    return C.GenerateAESKey(content)
+    return core.GenerateAESKey(content)
 
 
 def generate_random_iv() -> str:
@@ -53,4 +54,4 @@ def generate_random_iv() -> str:
     Returns:
         str: The randomly generated IV.
     """
-    return C.GenerateRandomIV()
+    return core.GenerateRandomIV()
