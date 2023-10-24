@@ -2,3 +2,5 @@
 .xmake/
 build/
 *__pycache__/
+*.pyd
+*.code-workspace
