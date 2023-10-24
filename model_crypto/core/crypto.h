@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include <string>
-#include <vector>
-#include <sstream>
 #include <iostream>
 
 #include <cryptopp/hex.h>
