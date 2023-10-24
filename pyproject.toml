@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "model_crypto"
+version = "0.1.0"
+requires-python = ">=3.7"
+description = "A Python package for model encryption and decryption, built on Crypto++"
+authors = [
+    {name = "laugh12321", email = "laugh12321@vip.qq.com"},
+]
+classifiers=[
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: POSIX :: Linux',
+]
+
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["model_crypto*"]
+
+
+[tool.setuptools.package-data]
+"model_crypto.libs" = ["*.pyd"]
