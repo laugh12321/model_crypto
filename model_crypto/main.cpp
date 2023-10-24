@@ -6,10 +6,12 @@
 
 namespace fs = std::filesystem;
 
+
 bool fileExists(const std::string& filename) {
     std::ifstream file(filename);
     return file.good();
 }
+
 
 std::string fileRead(const std::string& filename) {
     std::ifstream ifs(filename, std::ios::in | std::ios::binary | std::ios::ate);
@@ -29,6 +31,7 @@ std::string fileRead(const std::string& filename) {
     return fileContent;
 }
 
+
 void fileWrite(const std::string& filename, const std::string& data) {
     std::ofstream ofs(filename, std::ios::out | std::ios::binary | std::ios::trunc);
 
@@ -40,6 +43,7 @@ void fileWrite(const std::string& filename, const std::string& data) {
     ofs.write(data.c_str(), data.size());
     ofs.close();
 }
+
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
