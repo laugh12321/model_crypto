@@ -1,6 +1,8 @@
-.vscode/
-.xmake/
-build/
+*.vscode/
+*.xmake/
+*build/
 *__pycache__/
 *.pyd
 *.code-workspace
+include/
+lib/
