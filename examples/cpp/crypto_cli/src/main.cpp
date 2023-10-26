@@ -1,5 +1,5 @@
-#include "mac.hpp"
-#include "crypto.hpp"
+#include "utils/mac.hpp"
+#include "core/crypto.hpp"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
