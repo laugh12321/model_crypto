@@ -1,5 +1,5 @@
-#include "mac.h"
-#include "crypto.h"
+#include "mac.hpp"
+#include "crypto.hpp"
 #include <iostream>
 #include <fstream>
 #include <filesystem>

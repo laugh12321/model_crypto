@@ -14,7 +14,7 @@ target("crypto_core")
 
 target("crypto_utils")
     set_kind("static")
-    add_headerfiles("model_crypto/utils/*.h")
+    add_headerfiles("model_crypto/utils/*.hpp")
     add_includedirs("model_crypto/utils", {interface = true})
 
 
